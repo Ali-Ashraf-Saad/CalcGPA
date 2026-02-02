@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>حاسبة الـ GPA</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; outline: none; }
+        :root {
+            --primary-color: #2196F3;
+            --dark-blue: #1565C0;
+            --danger-color: #ff4444;
+            --danger-bg: #fff5f5;
+            --success-color: #00C851;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-radius: 12px;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0; padding: 0;
+            color: var(--text-color);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .header-section {
+            background: white; padding: 25px 15px 15px 15px; text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px;
+        }
+        h1 { margin: 0 0 8px 0; font-size: 2rem; color: var(--dark-blue); }
+        .subtitle { font-size: 1rem; color: #666; margin-bottom: 15px; font-weight: 500; }
+        .separator { width: 80px; height: 4px; background: linear-gradient(90deg, var(--primary-color), var(--success-color)); margin: 0 auto; border-radius: 2px; }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 0 20px 100px 20px; }
+
+        button {
+            cursor: pointer; border: none; border-radius: var(--border-radius);
+            padding: 12px 20px; font-size: 16px; font-weight: 600;
+            width: 100%; transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button:active { transform: scale(0.98); }
+        button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+
+        .btn-add-term {
+            background-color: white; color: var(--primary-color);
+            border: 2px dashed var(--primary-color); margin-top: 15px;
+        }
+        .btn-add-term:hover { background-color: #e3f2fd; }
+        
+        .term-card {
+            background-color: var(--card-bg); border-radius: var(--border-radius);
+            padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e1e1e1;
+            position: relative; transition: all 0.3s ease;
+        }
+
+        .term-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;}
+        .term-header input[type="text"] {
+            font-size: 1.2rem; font-weight: bold; border: 1px solid #ddd;
+            padding: 10px; border-radius: 8px; flex: 1;
+            color: var(--primary-color); background: #fafafa;
+        }
+        
+        .btn-delete-term {
+            width: auto; padding: 0 15px; height: 45px;
+            background-color: #ffebee; color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            border-radius: 8px; font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        .term-result-badge {
+            background: #eee; color: #333; padding: 5px 15px; border-radius: 8px;
+            font-weight: bold; font-size: 0.95rem; display: none; margin-left: 5px;
+            white-space: nowrap;
+        }
+        .term-result-badge.visible { display: block; background: #e3f2fd; color: var(--primary-color); }
+
+        .radio-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+        .radio-title { font-size: 0.9rem; font-weight: bold; color: #666; margin-bottom: 5px; }
+        .radio-options-row { display: flex; gap: 10px; }
+        
+        .radio-option {
+            flex: 1; display: flex; align-items: center; justify-content: center; padding: 12px 5px;
+            border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: #fff; font-size: 0.9rem; text-align: center;
+        }
+        .radio-option:has(input:checked) { border-color: var(--primary-color); background-color: #e3f2fd; color: var(--primary-color); font-weight: bold;}
+        .radio-option input { display: none; }
+
+        .input-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+        .hidden { display: none; }
+
+        input, select {
+            width: 100%; padding: 12px;
+            border: 1px solid #ccc; border-radius: 8px;
+            font-size: 16px; background: #fff;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .input-error {
+            border-color: var(--danger-color) !important;
+            background-color: var(--danger-bg) !important;
+            box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.1);
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .error-feedback {
+            color: var(--danger-color); font-size: 0.85rem; margin-top: 6px; padding: 0 5px;
+            font-weight: 600; display: flex; align-items: center; opacity: 0; max-height: 0;
+            overflow: hidden; transition: all 0.3s ease;
+        }
+        .error-feedback::before { content: '⚠️'; margin-left: 5px; font-size: 0.9rem; }
+        .error-feedback.visible { opacity: 1; max-height: 30px; transform: translateY(0); }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+            40%, 60% { transform: translate3d(3px, 0, 0); }
+        }
+
+        /* تنسيق الصف الخاص بالمواد */
+        .subject-row { 
+            display: flex; 
+            flex-wrap: nowrap; /* يمنع نزول العناصر لسطر جديد */
+            gap: 10px; 
+            margin-bottom: 12px; 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid #eee; 
+            align-items: flex-start; 
+        }
+
+        .subject-name { 
+            flex: 2; 
+            min-width: 0; /* يسمح بالتصغير */
+        }
+        
+        .subject-input-group { 
+            flex: 1.5; /* يعطي مساحة أكبر قليلاً للتقدير */
+            min-width: 140px; /* حد أدنى معقول ليظهر النص */
+            display: flex; 
+            flex-direction: column; 
+        } 
+        
+        .btn-delete { 
+            flex: 0 0 auto; 
+            width: auto; 
+            background-color: var(--danger-color); 
+            color: white; 
+            padding: 0 15px; 
+            font-size: 0.9rem; 
+            height: 45px; /* نفس ارتفاع الحقل */
+            display: flex; 
+            align-items: center;
+        } 
+        
+        .btn-add-subject { background-color: var(--success-color); color: white; margin-top: 15px; }
+
+        /* تعديل للهواتف الصغيرة جداً لضمان عدم اختفاء المحتوى */
+        @media (max-width: 400px) {
+            .subject-row { flex-wrap: wrap; }
+            .subject-name { flex: 1 1 100%; }
+            .subject-input-group { flex: 1 1 auto; }
+        }
+
+        .bottom-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; padding: 15px 20px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1); z-index: 100;
+            display: flex; gap: 15px; border-top: 1px solid #eee;
+            justify-content: center;
+        }
+        .bottom-bar button { max-width: 400px; }
+        .btn-calculate { background-color: var(--dark-blue); color: white; flex: 2; }
+        .btn-reset { background-color: #ffebee; color: var(--danger-color); border: 1px solid var(--danger-color); flex: 1; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); z-index: 2000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+            backdrop-filter: blur(3px); cursor: pointer;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .message-card, .result-card {
+            cursor: default; background: white; width: 90%; max-width: 450px;
+            padding: 30px; border-radius: 20px; text-align: center;
+            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        }
+        
+        .result-card { transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal-overlay.active .message-card { transform: scale(1); }
+        .modal-overlay.active .result-card { transform: translateY(0); }
+
+        .msg-icon { font-size: 3.5rem; margin-bottom: 15px; display: block; }
+        .msg-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #333; }
+        .msg-desc { color: #666; margin-bottom: 25px; font-size: 1rem; line-height: 1.6; }
+        .msg-actions { display: flex; gap: 15px; justify-content: center; }
+        .btn-ok { background-color: var(--primary-color); color: white; flex: 1; }
+        .btn-danger-confirm { background-color: var(--danger-color); color: white; flex: 1; }
+        .btn-cancel { background-color: #eee; color: #333; flex: 1; }
+
+        .gpa-circle {
+            width: 160px; height: 160px; background: var(--dark-blue); color: white;
+            border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            margin: 0 auto 30px auto; box-shadow: 0 10px 25px rgba(21, 101, 192, 0.4);
+        }
+        .gpa-number { font-size: 3.2rem; font-weight: bold; line-height: 1; }
+        .gpa-label { font-size: 0.9rem; opacity: 0.9; margin-top: 5px; }
+
+        .result-details { width: 100%; margin-bottom: 35px; }
+        .detail-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #eee; font-size: 1.1rem; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: #666; font-size: 1rem; }
+        .detail-value { font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="header-section">
+    <h1>حاسبة الـ GPA</h1>
+    <div class="subtitle">كلية الحاسبات والمعلومات – جامعة المنوفية</div>
+    <div class="separator"></div>
+</div>
+
+<div class="container">
+    <div id="terms-container"></div>
+    <button class="btn-add-term" onclick="addTerm()">+ إضافة ترم جديد</button>
+</div>
+
+<div class="bottom-bar">
+    <button class="btn-reset" onclick="confirmResetAction()">مسح الكل</button>
+    <button class="btn-calculate" onclick="calculateOverallGPA()">أحسب النتيجة</button>
+</div>
+
+<div id="result-modal" class="modal-overlay" onclick="closeModalOutside(event, 'result-modal')">
+    <div class="result-card">
+        <div class="gpa-circle">
+            <span class="gpa-number" id="final-gpa">0.00</span>
+            <span class="gpa-label">المعدل التراكمي</span>
+        </div>
+        <div class="result-details">
+            <div class="detail-row">
+                <span class="detail-label">التقدير العام</span>
+                <span class="detail-value" id="final-grade">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">أقصى المواد للتسجيل في الترم القادم</span>
+                <span class="detail-value" id="final-load">-</span>
+            </div>
+        </div>
+        <button class="btn-calculate" onclick="closeModal('result-modal')">رجوع للتعديل</button>
+    </div>
+</div>
+
+<div id="general-modal" class="modal-overlay" onclick="closeModalOutside(event, 'general-modal')">
+    <div class="message-card">
+        <span class="msg-icon" id="msg-icon">⚠️</span>
+        <div class="msg-title" id="msg-title">عنوان</div>
+        <div class="msg-desc" id="msg-desc">نص الرسالة</div>
+        <div class="msg-actions" id="msg-actions"></div>
+    </div>
+</div>
+
+<script>
+    let termCounter = 0;
+    let termIdToDelete = null;
+
+    const gradePoints = {
+        'A+': 4.0, 'A': 3.7, 'B+': 3.3, 'B': 3.0,
+        'C+': 2.7, 'C': 2.4, 'D+': 2.2, 'D': 2.0, 'F': 0.0
+    };
+
+    function clearError(input) {
+        input.classList.remove('input-error');
+        const parent = input.parentElement;
+        const errorMsg = parent.querySelector('.error-feedback');
+        if (errorMsg) {
+            errorMsg.classList.remove('visible');
+        }
+    }
+
+    function validateInput(input, min, max) {
+        const valStr = input.value;
+        const parent = input.parentElement;
+        
+        let errorMsg = parent.querySelector('.error-feedback');
+        if (!errorMsg) {
+            errorMsg = document.createElement('div');
+            errorMsg.className = 'error-feedback';
+            parent.appendChild(errorMsg);
+        }
+
+        if (valStr.trim() === "") {
+            input.classList.add('input-error');
+            errorMsg.innerText = "هذا الحقل مطلوب";
+            errorMsg.classList.add('visible');
+            return false;
+        }
+
+        if (min !== undefined && max !== undefined) {
+            const val = parseFloat(valStr);
+            if (val < min || val > max) {
+                input.classList.add('input-error');
+                errorMsg.innerText = `القيمة بين ${min} و ${max}`;
+                errorMsg.classList.add('visible');
+                return false;
+            }
+        }
+
+        clearError(input);
+        return true;
+    }
+
+    function addTerm() {
+        termCounter++;
+        const container = document.getElementById('terms-container');
+        const termId = `term-${termCounter}`;
+        const termDiv = document.createElement('div');
+        termDiv.className = 'term-card';
+        termDiv.id = termId;
+
+        termDiv.innerHTML = `
+            <div class="term-header">
+                <input type="text" value="ترم ${termCounter}" onclick="this.select()">
+                <div class="term-result-badge" id="${termId}-badge">GPA: 0.00</div>
+                <button class="btn-delete-term" onclick="confirmDeleteTerm('${termId}')">🗑️</button>
+            </div>
+            <div class="radio-group">
+                <div class="radio-title">طريقة حساب الترم:</div>
+                <div class="radio-options-row">
+                    <label class="radio-option">
+                        <input type="radio" name="mode-${termId}" value="term-gpa" onchange="updateTermView('${termId}')" checked> المعدل الفصلي
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="mode-${termId}" value="subjects-letter" onchange="updateTermView('${termId}')"> مواد (تقديرات)
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="mode-${termId}" value="subjects-percent" onchange="updateTermView('${termId}')"> المواد (درجة)
+                    </label>
+                </div>
+            </div>
+            <div id="${termId}-direct" class="input-section">
+                <label style="display:block; margin-bottom:5px;">المعدل الفصلي (GPA):</label>
+                <input type="number" step="0.01" class="term-gpa-input" placeholder="مثلاً: 3.5" oninput="clearError(this)">
+            </div>
+            <div id="${termId}-subjects" class="input-section hidden">
+                <div class="subjects-list" id="${termId}-list"></div>
+                <button class="btn-add-subject" onclick="addSubject('${termId}')">+ إضافة مادة</button>
+            </div>
+        `;
+        container.appendChild(termDiv);
+        addSubject(termId);
+    }
+
+    function updateTermView(termId) {
+        const mode = document.querySelector(`input[name="mode-${termId}"]:checked`).value;
+        const directDiv = document.getElementById(`${termId}-direct`);
+        const subjectsDiv = document.getElementById(`${termId}-subjects`);
+        const listContainer = document.getElementById(`${termId}-list`);
+        document.getElementById(`${termId}-badge`).classList.remove('visible');
+
+        const allInputs = document.getElementById(termId).querySelectorAll('input, select');
+        allInputs.forEach(inp => clearError(inp));
+
+        if (mode === 'term-gpa') {
+            directDiv.classList.remove('hidden'); subjectsDiv.classList.add('hidden');
+        } else {
+            directDiv.classList.add('hidden'); subjectsDiv.classList.remove('hidden');
+            const rows = listContainer.querySelectorAll('.subject-row');
+            rows.forEach(row => {
+                const inputGroup = row.querySelector('.subject-input-group');
+                inputGroup.innerHTML = getSubjectInputHTML(mode);
+            });
+        }
+    }
+
+    function getSubjectInputHTML(mode) {
+        if (mode === 'subjects-letter') {
+            return `<select class="grade-input" onchange="clearError(this)">
+                    <option value="" disabled selected>التقدير</option>
+                    <option value="A+">A+ / أ+</option>
+                    <option value="A">A / أ</option>
+                    <option value="B+">B+ / ب+</option>
+                    <option value="B">B / ب</option>
+                    <option value="C+">C+ / ج+</option>
+                    <option value="C">C / ج</option>
+                    <option value="D+">D+ / د+</option>
+                    <option value="D">D / د</option>
+                    <option value="F">F / ر / رن / رل</option>
+                    </select>`;
+        } else {
+            return `<input type="number" class="percent-input" placeholder="الدرجة" min="0" max="100" oninput="clearError(this)">`;
+        }
+    }
+
+    function addSubject(termId) {
+        const listContainer = document.getElementById(`${termId}-list`);
+        const checkedRadio = document.querySelector(`input[name="mode-${termId}"]:checked`);
+        let mode = (checkedRadio && checkedRadio.value !== 'term-gpa') ? checkedRadio.value : 'subjects-letter';
+        const currentCount = listContainer.querySelectorAll('.subject-row').length + 1;
+        const row = document.createElement('div');
+        row.className = 'subject-row';
+        row.innerHTML = `<input type="text" class="subject-name" placeholder="اسم المادة" value="مادة ${currentCount}">
+            <div class="subject-input-group">${getSubjectInputHTML(mode)}</div>
+            <button class="btn-delete" onclick="this.parentElement.remove()">حذف</button>`;
+        listContainer.appendChild(row);
+    }
+
+    function convertPercentToPoints(percent) {
+        if (percent >= 90) return 4.0; if (percent >= 85) return 3.7;
+        if (percent >= 80) return 3.3; if (percent >= 75) return 3.0;
+        if (percent >= 70) return 2.7; if (percent >= 65) return 2.4;
+        if (percent >= 60) return 2.2; if (percent >= 50) return 2.0;
+        return 0.0;
+    }
+
+    function calculateOverallGPA() {
+        const terms = document.getElementsByClassName('term-card');
+        let sumOfGPAs = 0; let termsCount = 0;
+        let hasError = false;
+
+        for (let term of terms) {
+            const termId = term.id;
+            const mode = document.querySelector(`input[name="mode-${termId}"]:checked`).value;
+            const badge = document.getElementById(`${termId}-badge`);
+            let currentTermGPA = 0; let isValidTerm = false;
+
+            if (mode === 'term-gpa') {
+                const gpaInput = term.querySelector('.term-gpa-input');
+                if (validateInput(gpaInput, 0, 4)) {
+                    currentTermGPA = parseFloat(gpaInput.value); isValidTerm = true;
+                } else {
+                    hasError = true;
+                }
+            } else {
+                const rows = term.querySelectorAll(`#${termId}-list .subject-row`);
+                let totalSubjectPoints = 0; let subjectsCount = 0;
+                
+                rows.forEach(row => {
+                    let points = 0; let hasValue = false;
+                    
+                    if (mode === 'subjects-letter') {
+                        const gradeSelect = row.querySelector('.grade-input');
+                        if (validateInput(gradeSelect)) { 
+                             points = gradePoints[gradeSelect.value]; hasValue = true;
+                        } else {
+                            hasError = true;
+                        }
+                    } else {
+                        const percentInput = row.querySelector('.percent-input');
+                        if (validateInput(percentInput, 0, 100)) { 
+                            points = convertPercentToPoints(parseFloat(percentInput.value)); hasValue = true;
+                        } else {
+                            hasError = true;
+                        }
+                    }
+                    if (hasValue) { totalSubjectPoints += points; subjectsCount++; }
+                });
+                
+                if (subjectsCount > 0 && !hasError) { 
+                    currentTermGPA = totalSubjectPoints / subjectsCount; isValidTerm = true; 
+                }
+            }
+
+            if (isValidTerm) {
+                sumOfGPAs += currentTermGPA; termsCount++;
+                badge.innerText = `GPA: ${currentTermGPA.toFixed(2)}`; badge.classList.add('visible');
+            } else { badge.classList.remove('visible'); }
+        }
+
+        if (hasError) {
+             showAlert("تنبيه", "توجد حقول ناقصة أو خاطئة (باللون الأحمر).", "⚠️");
+        } else if (termsCount > 0) {
+            const finalGPA = sumOfGPAs / termsCount;
+            document.getElementById('final-gpa').innerText = finalGPA.toFixed(2);
+            document.getElementById('final-grade').innerText = getGradeText(finalGPA);
+            document.getElementById('final-load').innerText = getNextLoad(finalGPA);
+            
+            document.getElementById('result-modal').classList.add('active');
+            if (finalGPA >= 3.0) triggerConfetti();
+        } else {
+            showAlert("تنبيه", "الرجاء إدخال بيانات صحيحة في ترم واحد على الأقل للمتابعة.", "⚠️");
+        }
+    }
+
+    function showAlert(title, message, icon) {
+        document.getElementById('msg-icon').innerText = icon || "ℹ️";
+        document.getElementById('msg-title').innerText = title;
+        document.getElementById('msg-desc').innerText = message;
+        
+        const actionsDiv = document.getElementById('msg-actions');
+        actionsDiv.innerHTML = `<button class="btn-ok" onclick="closeModal('general-modal')">حسناً</button>`;
+        
+        document.getElementById('general-modal').classList.add('active');
+    }
+
+    function confirmDeleteTerm(termId) {
+        termIdToDelete = termId;
+        document.getElementById('msg-icon').innerText = "🗑️";
+        document.getElementById('msg-title').innerText = "حذف الترم؟";
+        document.getElementById('msg-desc').innerText = "سيتم حذف هذا الترم بجميع بياناته. هل أنت متأكد؟";
+        
+        const actionsDiv = document.getElementById('msg-actions');
+        actionsDiv.innerHTML = `
+            <button class="btn-cancel" onclick="closeModal('general-modal')">إلغاء</button>
+            <button class="btn-danger-confirm" onclick="executeDeleteTerm()">نعم، احذف</button>
+        `;
+        document.getElementById('general-modal').classList.add('active');
+    }
+
+    function executeDeleteTerm() {
+        if (termIdToDelete) {
+            const termElement = document.getElementById(termIdToDelete);
+            if (termElement) { termElement.remove(); }
+            termIdToDelete = null;
+        }
+        closeModal('general-modal');
+    }
+
+    function confirmResetAction() {
+        document.getElementById('msg-icon').innerText = "⚠️";
+        document.getElementById('msg-title').innerText = "مسح الكل؟";
+        document.getElementById('msg-desc').innerText = "سيتم حذف جميع الترمات والعودة للبداية.";
+        
+        const actionsDiv = document.getElementById('msg-actions');
+        actionsDiv.innerHTML = `
+            <button class="btn-cancel" onclick="closeModal('general-modal')">إلغاء</button>
+            <button class="btn-danger-confirm" onclick="executeReset()">نعم، مسح البيانات</button>
+        `;
+        document.getElementById('general-modal').classList.add('active');
+    }
+
+    function executeReset() {
+        const container = document.getElementById('terms-container');
+        container.innerHTML = ''; termCounter = 0; addTerm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        closeModal('general-modal');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    function closeModalOutside(event, modalId) {
+        if (event.target.id === modalId) { closeModal(modalId); }
+    }
+
+    function getGradeText(gpa) {
+        if (gpa >= 3.5) return "ممتاز"; if (gpa >= 3.0) return "جيد جداً";
+        if (gpa >= 2.5) return "جيد"; if (gpa >= 2.0) return "مقبول";
+        if (gpa >= 1.5) return "ضعيف"; return "ضعيف جداً";
+    }
+
+    function getNextLoad(gpa) {
+        if (gpa >= 2.0) return "6 مواد"; if (gpa >= 1.5) return "5 مواد"; return "4 مواد";
+    }
+
+    function triggerConfetti() {
+        var duration = 3000; var animationEnd = Date.now() + duration;
+        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 3000 };
+        var interval = setInterval(function() {
+            var timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) return clearInterval(interval);
+            var particleCount = 50 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random()*0.2 + 0.1, y: Math.random()-0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random()*0.2 + 0.7, y: Math.random()-0.2 } }));
+        }, 250);
+    }
+
+    addTerm();
+
+</script>
+
+</body>
+</html>
